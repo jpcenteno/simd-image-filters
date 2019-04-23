@@ -2,6 +2,5 @@
 .DS_Store
 *.o
 
-Makefile
 tp2
 bmpdiff
