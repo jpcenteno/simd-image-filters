@@ -97,6 +97,87 @@ computar_sen_ii: ; {{{
     pop rbp
     ret ; /computar_sen_ii }}}
 
+; float* computar_cos_jj(uint32_t width, uint32_t n);
+;
+; Devuelve un array de floats (ss) con el valor de cos(jj) definido como
+; cos( (2PI * float(i % n)) / n ). La longitud del array es `width`.
+computar_cos_jj: ; {{{
+
+    ; INPUT:
+    ; EDI = width
+    ; ESI = n
+
+    push rbp
+    mov rbp, rsp
+
+    push r12
+    push r13
+
+    ; Preserva parametros
+    mov r12d, edi                         ; Preserva 'width'
+    mov r13d, esi                         ; Preserva 'n'
+
+    ; Pide memoria para el array
+    shl edi, 2                            ; (1er param) edi = width * 4 (tamano para array floats)
+    call malloc                           ; rax = malloc(width * 4)
+    mov rdi, rax                          ; preserva el arreglo. (rax se pisa en el loop)
+
+    ; Loop donde escribe el array con los datos corresp. {{{
+
+    xor rcx, rcx                          ; j = 0
+    ; Salta a la guarda
+    jmp .cond
+
+    .loop: ; Escribe a[j] {{{
+
+        ; Calcula cos(jj[j]) para este valor de j.
+
+        ; Calcula edx = i % n
+        xor edx, edx                    ; Anula parte alta dividendo
+        mov eax, ecx                    ; dividendo = j
+        div r13d                        ; edx = j % n (pisa RAX)
+
+        ; Convierto a float. Ahora trabajo en FPU
+        mov [rsp - 4], edx              ; hack para cargar `edx` en FPU
+        fild dword [rsp -4]             ; push (j%n) al stack FPU
+
+        ; * 2PI
+        fld dword [SS_2PI]              ; push 2PI al stack FPU
+        fmul                            ; FPU tiene 2PI*(j%n)
+
+        ; / float(n)
+        mov [rsp - 4], r13d             ; Hack para cargar `n` de edx al FPU
+        fild dword [rsp - 4]            ; Push float(n) al FPU
+        fdiv                            ; FPU = 2PI*(j%n)/n
+
+        ; op sin
+        fcos                            ; FPU = cos(2 PI ( j % n ) / n )
+
+        fstp dword [rdi + rcx * 4]       ; Escribe el resltado en el array
+
+    ; /.loop }}}
+
+    ; Incrementa i
+    inc rcx
+
+    .cond: ; Guarda del loop {{{
+    cmp ecx, r12d                         ; i < width
+    jl .loop                              ; si es menor, loopea
+    ; /.cond }}}
+
+    ; }}}
+
+    mov rax, rdi                         ; devuelve el arreglo
+
+    ; Se espera a la salida del loop que:
+    ; - valor de retorno RAX es puntero al inicio del array.
+    ; - El array en RAX tiene los valores sen(ii) que debian computarse
+
+    pop r13
+    pop r12
+
+    pop rbp
+    ret ; /computar_sen_ii }}}
 
 ; 1. rdi        <- uint8_t     *src
 ; 2. rsi        <- uint8_t     *dst
@@ -127,7 +208,12 @@ Manchas_asm: ; {{{
     call computar_sen_ii                ; rax = sen(ii)[i]
     mov rbx, rax                        ; preservo array
 
-    ; Hasta aca debuguea
+    ; Computo array cos(jj)[j]
+    mov edi, r14d                       ; (1er param) EDI = width
+    mov esi, [rbp + 16]                 ; (2do param) ESI = n
+    call computar_cos_jj                ; rax = cos(jj)[j]
+
+    ; Hasta aca debugueado
 
     ; while (0 < i)
     jmp .vertloop_cmp
