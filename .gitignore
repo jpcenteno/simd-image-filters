@@ -1,1 +1,9 @@
+# Archivos basura
+.vscode/
+.DS_Store
+
+# binarios
 src/build
+tp2
+bmpdiff
+*.o
