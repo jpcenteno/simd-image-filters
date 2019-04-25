@@ -45,12 +45,6 @@ function run_test {
 
 for imp in asm; do
 
-  # Cuadrados
-  for s in ${SIZESMEM[*]}; do
-    run_test "$TP2ALU" "Cuadrados" "$imp" "$TESTINDIR/$img1.$s.bmp" ""
-    if [ $ret -ne 0 ]; then exit -1; fi
-  done
-
   # Manchas
   for s in ${SIZESMEM[*]}; do
     v=0.555
@@ -58,24 +52,6 @@ for imp in asm; do
     if [ $ret -ne 0 ]; then exit -1; fi
   done
 
-  # Offset
-  for s in ${SIZESMEM[*]}; do
-    run_test "$TP2ALU" "Offset" "$imp" "$TESTINDIR/$img1.$s.bmp" ""
-    if [ $ret -ne 0 ]; then exit -1; fi
-  done
-
-  # Sharpen
-  for s in ${SIZESMEM[*]}; do
-    run_test "$TP2ALU" "Sharpen" "$imp" "$TESTINDIR/$img1.$s.bmp" ""
-    if [ $ret -ne 0 ]; then exit -1; fi
-  done
-  
-  # Ruido
-#  for s in ${SIZESMEM[*]}; do
-#    run_test "$TP2ALU" "Ruido" "$imp" "$TESTINDIR/$img1.$s.bmp" ""
-#    if [ $ret -ne 0 ]; then exit -1; fi
-#  done
-  
 done
 
 echo ""
