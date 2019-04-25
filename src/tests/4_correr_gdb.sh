@@ -1,10 +1,16 @@
 #! /usr/bin/env bash
 
+# Salir automaticamente cuando haya un error.
+set -e
+
 # vamos a usar esta imagen para correr el debugger.
 IMG="data/imagenes_a_testear/NoCountryForOldMen.32x18.bmp"
 
 # Ejecutable
 TP2="../build/tp2"
+
+# Source path con codigo filtros
+SOURCE_DIR="../filters"
 
 # FIXME hacelo parametro
 FILTRO="Manchas"
@@ -31,4 +37,4 @@ rm -f    "$OUTPUT_DIR/*" # Si habia algo, lo vacia
 
 # Corre el ejecutable
 echo -e "\n>>>>>>>>>> Corriendo GDB"
-gdb --args "$TP2" "$FILTRO" -i "$IMPL" -o "$OUTPUT_DIR" "$IMG" 100 # FIXME corregi el param este que va para Manchas nomas
+gdb -d "$SOURCE_DIR" --args "$TP2" "$FILTRO" -i "$IMPL" -o "$OUTPUT_DIR" "$IMG" 100 # FIXME corregi el param este que va para Manchas nomas
