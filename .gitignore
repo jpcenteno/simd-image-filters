@@ -1,6 +1,7 @@
 # Archivos basura
 .vscode/
 .DS_Store
+.gdb_history
 
 # Archivos generados por los tests
 src/tests/data/imagenes_a_testear/*
