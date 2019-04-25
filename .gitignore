@@ -2,7 +2,14 @@
 .vscode/
 .DS_Store
 
+# Archivos generados por los tests
+src/tests/data/imagenes_a_testear/*
+src/tests/data/resultados_catedra/*
+src/tests/data/resultados_nuestros/*
+
+
 # binarios
+**/__pycache__/
 src/build
 tp2
 bmpdiff
