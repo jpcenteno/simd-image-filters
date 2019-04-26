@@ -33,7 +33,7 @@ computar_sen_ii: ; {{{
 
     ; Pide memoria para el array
     shl edi, 2                            ; (1er param) edi = height * 4 (tamano para array floats)
-    call malloc                           ; rax = malloc(height * 4) FIXME supongo que esto esta bien
+    call malloc                           ; rax = malloc(height * 4)
     mov rdi, rax                          ; preserva el arreglo. (rax se pisa en el loop)
 
     ; Loop donde escribe el array con los datos corresp. {{{
@@ -59,7 +59,6 @@ computar_sen_ii: ; {{{
         fild dword [rsp -4]             ; push (i%n) al stack FPU
 
         ; * 2PI
-        mov rax, SS_2PI                 ; FIXME borrame
         fld dword [SS_2PI]              ; push 2PI al stack FPU
         fmul                            ; FPU tiene 2PI*(i%n)
 
@@ -191,11 +190,10 @@ Manchas_asm: ; {{{
     push rbp
     mov rbp, rsp
 
-    push r12
-    push r13
-    push r14
-    push r15
-    push rbx
+    push r12                            ; [rbp + 8 ]
+    push r13                            ; [rbp + 16]
+    push r14                            ; [rbp + 24]
+    push r15                            ; [rbp + 32]
 
     mov r12, rdi                        ; (preservo) r12  = src
     mov r13, rsi                        ; (preservo) r13  = dst
@@ -205,57 +203,49 @@ Manchas_asm: ; {{{
     ; Computo array sen(ii)[i]
     mov edi, r15d                       ; (1er param) EDI = height
     mov esi, [rbp + 16]                 ; (2do param) ESI = n
-    call computar_sen_ii                ; rax = sen(ii)[i]
-    mov rbx, rax                        ; preservo array
+    call computar_sen_ii                ; rax = senjj[]
+    push rax                            ; [rbp + 40] preservo senjj[]
+    sub rsp, 8                          ; [rbp + 48] (alineo stack)
 
     ; Computo array cos(jj)[j]
     mov edi, r14d                       ; (1er param) EDI = width
     mov esi, [rbp + 16]                 ; (2do param) ESI = n
-    call computar_cos_jj                ; rax = cos(jj)[j]
+    call computar_cos_jj                ; rax = cosjj[]
+    mov [rsp], rax                      ; [rbp + 48] preservo cosjj[]
 
     ; Hasta aca debugueado
 
     ; while (0 < i)
     jmp .vertloop_cmp
-    .vertloop:
 
-      dec ecx                                   ; ecx = i--
+.vertloop:
 
-      ; FIXME Computa ii {{{
+    dec ecx                                   ; ecx = i--
 
-      ; Hace vector [i, i, i, i]
-      pinsrd xmm0, ecx, 0                       ; xmm0 = [ , , ,i] (pd)
-      pinsrd xmm0, ecx, 1                       ; xmm0 = [ , ,i,i] (pd)
-      pinsrd xmm0, ecx, 2                       ; xmm0 = [ ,i,i,i] (pd)
-      pinsrd xmm0, ecx, 3                       ; xmm0 = [i,i,i,i] (pd)
+    xor r8d, r8d                              ; j = 0
+    jmp .horizloop_cmp                        ; while (j < width)
 
-      ; Como saco el modulo en SIMD?
+.horizloop:
 
+    ; FIXME computa x (tono)
 
+    ; lee 4px (16B) de ram
+    ; separa 3 componentes
+    ; Procesa
+    ; Escribe vec salida
 
-      ; /computa 'ii' }}}
+    add r8d, 16                               ; Avanzo 4px (16 Bytes)
 
-      xor r8d, r8d                              ; j = 0
-      jmp .horizloop_cmp                        ; while (j < width)
-      .horizloop:
+.horizloop_cmp:
+    cmp r8d, edx                              ; while (j < width)
+    jl .horizloop
 
-      ; FIXME Computa ii
-      ; fixme computa x (tono)
-
-      ; lee 4px (16B) de ram
-      ; separa 3 componentes
-      ; Procesa
-      ; Escribe vec salida
-
-      .horizloop_cmp:
-      cmp r8d, edx                              ; while (j < width)
-      jl .horizloop
-
-    .vertloop_cmp:                              ; while (0 < i)
+.vertloop_cmp:                                ; while (0 < i)
     cmp ecx, 0
     jnz .vertloop
 
-    push rbx
+    ; FIXME ahora tiene que liberar memoria de los 2 arrays cos(jj), sen(ii)
+
     pop r15
     pop r14
     pop r13
