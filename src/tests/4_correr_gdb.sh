@@ -24,11 +24,17 @@ OUTPUT_DIR="data/resultados_debugging"
 
 # Corre make
 echo -e "\n>>>>>>>>>> Corriendo Make"
-cd .. && make && cd tests
+cd ..
+if ! make; then
+    echo -e "\n>>>>>>>>>> FALLO Make"
+    exit -1
+fi
+cd tests
 
 # Se asegura que la imagen exista
 if [[ ! -f "$IMG" ]]; then
     echo -e "\n>>>>>>>>>> Generando Imagenes"
+    pwd
     ./1_generar_imagenes.py
 fi
 
