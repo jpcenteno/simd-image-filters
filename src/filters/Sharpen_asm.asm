@@ -18,8 +18,7 @@ Sharpen_asm:
 
     mov rax, rdi
 
-    ; times 3 add rdi, r8
-    mov r12, rsi
+    add rsi, r8
 
 .rows:
     cmp r10d, ecx
@@ -92,8 +91,10 @@ Sharpen_asm:
 
         ; algo
         ; mov dword [rsi + r11 * 4], 0xFF_FF_00_00
-        mov dword [rsi + r11 * 4], r13d
         inc r11
+        inc r11
+        mov dword [rsi + r11 * 4], r13d
+        dec r11
         jmp .cols
 
     .nextRow:
