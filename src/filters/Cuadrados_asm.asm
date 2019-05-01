@@ -1,5 +1,6 @@
 section .data
 cero: times 4 dd 0xff_00_00_00
+pixel: times 4 dd 0xff_55_aa_ee
 
 section .text
 global Cuadrados_asm
@@ -44,26 +45,24 @@ mov rdx, r13
 mov rcx, r14
 mov r8, r15
 mov r9, r15
-rol rdx, 32
-ror rdx, 32
-rol rcx, 32
-ror rcx, 32
-rol r8, 32
-ror r8, 32
-rol r9, 32
-ror r9, 32
-movdqu xmm0, [src+src_row_size*4 +0x00000080]
-movdqu xmm1, [dst+src_row_size*4 +0x00000080]
-xor r14, r14
-xor r15, r15
+shl rdx, 32
+shr rdx, 32
+shl rcx, 32
+shr rcx, 32
+shl r8, 32
+shr r8, 32
+shl r9, 32
+shr r9, 32
+lea rdi, [rdi+src_row_size*4 +16]
+lea rsi, [rsi+src_row_size*4 +16]
+movdqu xmm6, [pixel]
 ; seteo en cero los primeros 4 bytes de rdx y rcx
-
-xor r10, r10
-xor r11, r11
+xor column, column
+xor row, row
 add column, 4
 add row, 4
-sub width, 3
-sub height, 3
+sub width, 4
+shr height, 1
 ; write r8*3 in r9
 add r9, r9
 add r9, r8
@@ -75,18 +74,33 @@ je .finCicloRows
 .cicloColumns:
 cmp column, width
 je .finCicloColumns
-movdqu xmm2, [rdi]
-movdqu xmm3, [rdi+r8]
-movdqu xmm4, [rdi+r8*2]
-movdqu xmm5, [rdi+r9]
-
-lea rdi, [rdi+32]
-lea rsi, [rsi+32]
+movdqu xmm0, [rdi]
+movdqu xmm1, [rdi+r8]
+movdqu xmm2, [rdi+r8*2]
+movdqu xmm3, [rdi+r9]
+jmp .hallarMaximos
+.retornarDeMaximos:
+movss [rsi], xmm6
+lea rdi, [rdi+4]
+lea rsi, [rsi+4]
 inc column
 jmp .cicloColumns
 .finCicloColumns:
 inc row
+xor column, column
+add column, 4
+lea rdi, [rdi+32]
+lea rsi, [rsi+32]
 jmp .cicloRows
+.hallarMaximos:
+pxor xmm4, xmm4
+pmaxub xmm4, xmm0
+pmaxub xmm4, xmm1
+pmaxub xmm4, xmm2
+pmaxub xmm4, xmm3
+movdqu xmm6, xmm4
+
+jmp .retornarDeMaximos
 .finCicloRows:
 add rsp, 8
 pop r15
