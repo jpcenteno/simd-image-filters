@@ -15,7 +15,10 @@ DIFFFLAGS = ""
 
 corridas = [
     #{'filtro': 'Ruido', 'tolerancia': 5, 'params': ''},
+    {'filtro': 'Cuadrados', 'tolerancia': 5, 'params': ''},
     {'filtro': 'Manchas', 'tolerancia': 5, 'params': '100'},
+    {'filtro': 'Offset', 'tolerancia': 5, 'params': ''},
+    {'filtro': 'Sharpen', 'tolerancia': 5, 'params': ''}
 ]
 
 def make_dir(name):
