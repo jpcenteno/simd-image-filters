@@ -1,5 +1,5 @@
 section .data
-cero: times 4 dd 0x00_00_00_ff
+cero: times 4 dd 0xff_00_00_00
 
 section .text
 global Cuadrados_asm
@@ -15,13 +15,14 @@ global Cuadrados_asm
 ;r13 <-- maxR
 ;r14 <-- ii
 ;r15 <-- jj
-%define maxB rbx
-%define maxG r12
-%define maxR r13
-%define ii r14d
-%define jj r15d
-%define column r10d
-%define row r11d
+%define src rdi
+%define dst rsi
+%define width rdx
+%define height rcx
+%define src_row_size r8
+%define dst_row_size r9
+%define column r10
+%define row r11
 Cuadrados_asm:
 push rbp
 mov rbp, rsp
@@ -31,48 +32,62 @@ push r13
 push r14
 push r15
 sub rsp, 8
+mov rbx, rdi
+mov r12, rsi
+mov r13, rdx
+mov r14, rcx
+mov r15, r8
 call CompletarConCeros
-;movdqu xmm0, [rdi]
-;movdqu xmm1, [rsi]
-;xor r14, r14
-;xor r15, r15
+mov rdi, rbx
+mov rsi, r12
+mov rdx, r13
+mov rcx, r14
+mov r8, r15
+mov r9, r15
+rol rdx, 32
+ror rdx, 32
+rol rcx, 32
+ror rcx, 32
+rol r8, 32
+ror r8, 32
+rol r9, 32
+ror r9, 32
+movdqu xmm0, [src+src_row_size*4 +0x00000080]
+movdqu xmm1, [dst+src_row_size*4 +0x00000080]
+xor r14, r14
+xor r15, r15
 ; seteo en cero los primeros 4 bytes de rdx y rcx
-;rol rdx, 32
-;ror rdx, 32
-;ror rcx, 32
-;ror rcx, 32
-;xor r10, r10
-;xor r11, r11
-;add r10, 4
-;add r11, 4
-;sub edx, 5
-;sub ecx, 5
+
+xor r10, r10
+xor r11, r11
+add column, 4
+add row, 4
+sub width, 3
+sub height, 3
+; write r8*3 in r9
+add r9, r9
+add r9, r8
 ; from top to bottom
-;.cicloRows:
-;cmp row, ecx
-;je .finCicloRows
+.cicloRows:
+cmp row, height
+je .finCicloRows
 ;from left to right
-;.cicloColumns:
-;cmp column, edx
-;je .finCicloColumns
-;xor maxB, maxB
-;xor maxG, maxG
-;xor maxR, maxR
-;xor ii, ii
-;xor jj, jj
-;,.cicloii:
-;cmp ii, 3
-;je .finCicloii
-;.ciclojj:
-;cmp jj, 3
-;je .finCiclojj
-;.finCiclojj:
-;inc ii
-;jmp .cicloii
-;.finCicloColumns:
-;inc r11d
-;jmp .cicloRows
-;.finCicloRows:
+.cicloColumns:
+cmp column, width
+je .finCicloColumns
+movdqu xmm2, [rdi]
+movdqu xmm3, [rdi+r8]
+movdqu xmm4, [rdi+r8*2]
+movdqu xmm5, [rdi+r9]
+
+lea rdi, [rdi+32]
+lea rsi, [rsi+32]
+inc column
+jmp .cicloColumns
+.finCicloColumns:
+inc row
+jmp .cicloRows
+.finCicloRows:
 add rsp, 8
 pop r15
 pop r14
