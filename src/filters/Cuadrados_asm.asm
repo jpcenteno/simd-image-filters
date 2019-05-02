@@ -1,7 +1,5 @@
 section .data
 cero: times 4 dd 0xff_00_00_00
-pixel: times 4 dd 0xff_55_aa_ee
-;rotarizquierdacuatrobytes: db  0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x2,0x01,0x00,0x0f,0x0e,0x0d,0x0c,0x0b
 rotarizquierdacuatrobytes: db 0x0c,0x0d,0x0e,0x0f,0x00,0x01,0x02,0x03,0x4,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b
 section .text
 global Cuadrados_asm
@@ -12,20 +10,21 @@ global Cuadrados_asm
 ;r8d <-- src_row_size
 ;r9d <-- dst_row_size
 ;------------------------
-;rbx <-- maxB
-;r12 <-- maxG
-;r13 <-- maxR
-;r14 <-- ii
-;r15 <-- jj
 %define src rdi
 %define dst rsi
 %define width rdx
 %define height rcx
 %define src_row_size r8
-%define dst_row_size r9
+%define third_row_offset r9
 %define column r10
 %define row r11
-%define mascara xmm8
+%define first_row xmm0
+%define second_row xmm1
+%define third_row xmm2
+%define fourth_row xmm3
+%define vector_maximum xmm4
+%define rotated_vector_maximum xmm6
+%define mask xmm8
 Cuadrados_asm:
 push rbp
 mov rbp, rsp
@@ -35,40 +34,45 @@ push r13
 push r14
 push r15
 sub rsp, 8
-mov rbx, rdi
-mov r12, rsi
-mov r13, rdx
-mov r14, rcx
-mov r15, r8
+mov rbx, src
+mov r12, dst
+mov r13, width
+mov r14, height
+mov r15, src_row_size
+;preparing the call to CompletarConCeros.
+mov rdi, rsi
+mov rsi, rdx
+mov rdx, rcx
+mov rcx, r8
 call CompletarConCeros
-mov rdi, rbx
-mov rsi, r12
-mov rdx, r13
-mov rcx, r14
-mov r8, r15
-mov r9, r15
-shl rdx, 32
-shr rdx, 32
-shl rcx, 32
-shr rcx, 32
-shl r8, 32
-shr r8, 32
-shl r9, 32
-shr r9, 32
-lea rdi, [rdi+src_row_size*4 +16]
-lea rsi, [rsi+src_row_size*4 +16]
-movdqu mascara, [rotarizquierdacuatrobytes]
-; seteo en cero los primeros 4 bytes de rdx y rcx
+;restoring variables.
+mov src, rbx
+mov dst, r12
+mov width, r13
+mov height, r14
+mov src_row_size, r15
+mov r9, r13
+shl width, 32
+shr width, 32
+shl height, 32
+shr height, 32
+shl src_row_size, 32
+shr src_row_size, 32
+shl third_row_offset, 32
+shr third_row_offset, 32
+lea src, [src+src_row_size*4 +16]
+lea dst, [dst+src_row_size*4 +16]
+movdqu mask, [rotarizquierdacuatrobytes]
 xor column, column
 xor row, row
 add column, 4
 add row, 4
 sub width, 4
 sub height, 4
-; write r8*3 in r9
+;writing r8*3 in r9
 add r9, r9
-add r9, r8
-; from top to bottom
+add r9, src_row_size
+;from top to bottom
 .cicloRows:
 cmp row, height
 je .finCicloRows
@@ -76,37 +80,37 @@ je .finCicloRows
 .cicloColumns:
 cmp column, width
 je .finCicloColumns
-movdqu xmm0, [rdi]
-movdqu xmm1, [rdi+r8]
-movdqu xmm2, [rdi+r8*2]
-movdqu xmm3, [rdi+r9]
+movdqu first_row, [src]
+movdqu second_row, [src+src_row_size]
+movdqu third_row, [src+src_row_size*2]
+movdqu fourth_row, [src+third_row_offset]
 jmp .hallarMaximos
 .retornarDeMaximos:
-movss [rsi], xmm4
-lea rdi, [rdi+4]
-lea rsi, [rsi+4]
+movss [dst], vector_maximum
+lea src, [src+4]
+lea dst, [dst+4]
 inc column
 jmp .cicloColumns
 .finCicloColumns:
 inc row
 xor column, column
 add column, 4
-lea rdi, [rdi+32]
-lea rsi, [rsi+32]
+lea src, [src+32]
+lea dst, [dst+32]
 jmp .cicloRows
 .hallarMaximos:
-pxor xmm4, xmm4
-pmaxub xmm4, xmm0
-pmaxub xmm4, xmm1
-pmaxub xmm4, xmm2
-pmaxub xmm4, xmm3
-movdqu xmm6, xmm4
-pshufb xmm6, mascara
-pmaxub xmm4, xmm6
-pshufb xmm6, mascara
-pmaxub xmm4, xmm6
-pshufb xmm6, mascara
-pmaxub xmm4, xmm6
+pxor vector_maximum, vector_maximum
+pmaxub vector_maximum, first_row
+pmaxub vector_maximum, second_row
+pmaxub vector_maximum, third_row
+pmaxub vector_maximum, fourth_row
+movdqu rotated_vector_maximum, vector_maximum
+pshufb rotated_vector_maximum, mask
+pmaxub vector_maximum, rotated_vector_maximum
+pshufb rotated_vector_maximum, mask
+pmaxub vector_maximum, rotated_vector_maximum
+pshufb rotated_vector_maximum, mask
+pmaxub vector_maximum, rotated_vector_maximum
 jmp .retornarDeMaximos
 .finCicloRows:
 add rsp, 8
@@ -118,12 +122,10 @@ pop rbx
 pop rbp
 ret
 
-;rdi <-- src
-;rsi <-- dst
-;edx <-- width
-;ecx <-- height
-;r8d <-- src_row_size
-;r9d <-- dst_row_size
+;rdi <-- dst
+;rsi <-- width
+;rdx <-- height
+;rcx <-- src_row_size
 ;--------------------
 ;r12 guardo dst
 ;r13 guardo width
@@ -140,10 +142,10 @@ xor r12, r12
 xor r13, r13
 xor r14, r14
 xor r15, r15
-mov r12, rsi
-mov r13d, edx
-mov r14d, ecx
-mov r15d, r8d
+mov r12, rdi
+mov r13d, esi
+mov r14d, edx
+mov r15d, ecx
 movdqu xmm2, [cero]
 shr r13, 1
 ; r8 <--- column index
