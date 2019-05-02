@@ -1,7 +1,8 @@
 section .data
 cero: times 4 dd 0xff_00_00_00
 pixel: times 4 dd 0xff_55_aa_ee
-
+;rotarizquierdacuatrobytes: db  0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x2,0x01,0x00,0x0f,0x0e,0x0d,0x0c,0x0b
+rotarizquierdacuatrobytes: db 0x0c,0x0d,0x0e,0x0f,0x00,0x01,0x02,0x03,0x4,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b
 section .text
 global Cuadrados_asm
 ;rdi <-- src
@@ -24,6 +25,7 @@ global Cuadrados_asm
 %define dst_row_size r9
 %define column r10
 %define row r11
+%define mascara xmm8
 Cuadrados_asm:
 push rbp
 mov rbp, rsp
@@ -55,14 +57,14 @@ shl r9, 32
 shr r9, 32
 lea rdi, [rdi+src_row_size*4 +16]
 lea rsi, [rsi+src_row_size*4 +16]
-movdqu xmm6, [pixel]
+movdqu mascara, [rotarizquierdacuatrobytes]
 ; seteo en cero los primeros 4 bytes de rdx y rcx
 xor column, column
 xor row, row
 add column, 4
 add row, 4
 sub width, 4
-shr height, 1
+sub height, 4
 ; write r8*3 in r9
 add r9, r9
 add r9, r8
@@ -80,7 +82,7 @@ movdqu xmm2, [rdi+r8*2]
 movdqu xmm3, [rdi+r9]
 jmp .hallarMaximos
 .retornarDeMaximos:
-movss [rsi], xmm6
+movss [rsi], xmm4
 lea rdi, [rdi+4]
 lea rsi, [rsi+4]
 inc column
@@ -99,7 +101,12 @@ pmaxub xmm4, xmm1
 pmaxub xmm4, xmm2
 pmaxub xmm4, xmm3
 movdqu xmm6, xmm4
-
+pshufb xmm6, mascara
+pmaxub xmm4, xmm6
+pshufb xmm6, mascara
+pmaxub xmm4, xmm6
+pshufb xmm6, mascara
+pmaxub xmm4, xmm6
 jmp .retornarDeMaximos
 .finCicloRows:
 add rsp, 8
