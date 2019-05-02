@@ -15,7 +15,7 @@ global Cuadrados_asm
 %define width rdx
 %define height rcx
 %define src_row_size r8
-%define third_row_offset r9
+%define fourth_row_offset r9
 %define column r10
 %define row r11
 %define first_row xmm0
@@ -51,15 +51,15 @@ mov dst, r12
 mov width, r13
 mov height, r14
 mov src_row_size, r15
-mov r9, r13
+mov r9, r15
 shl width, 32
 shr width, 32
 shl height, 32
 shr height, 32
 shl src_row_size, 32
 shr src_row_size, 32
-shl third_row_offset, 32
-shr third_row_offset, 32
+shl fourth_row_offset, 32
+shr fourth_row_offset, 32
 lea src, [src+src_row_size*4 +16]
 lea dst, [dst+src_row_size*4 +16]
 movdqu mask, [rotarizquierdacuatrobytes]
@@ -70,8 +70,8 @@ add row, 4
 sub width, 4
 sub height, 4
 ;writing r8*3 in r9
-add r9, r9
-add r9, src_row_size
+add fourth_row_offset, fourth_row_offset
+add fourth_row_offset, src_row_size
 ;from top to bottom
 .cicloRows:
 cmp row, height
@@ -83,7 +83,7 @@ je .finCicloColumns
 movdqu first_row, [src]
 movdqu second_row, [src+src_row_size]
 movdqu third_row, [src+src_row_size*2]
-movdqu fourth_row, [src+third_row_offset]
+movdqu fourth_row, [src+fourth_row_offset]
 jmp .hallarMaximos
 .retornarDeMaximos:
 movss [dst], vector_maximum
