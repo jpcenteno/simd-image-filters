@@ -10,7 +10,7 @@ section .rodata
     SS_2PI: dd 6.28318
 
     ; Constantes para calcular `tono`
-    PS_50: times 4 dd 50.0
+    PS_50: times 4 dd -50.0
     PS_25: times 4 dd 25.0
 
     ; FIXME por que necesito usar unaligned si puse align 16 mas arriba?
@@ -18,6 +18,12 @@ section .rodata
 
     PD_ZEROS:    times 4 dd 0x00
     PD_BYTE_MAX: times 4 dd 0xFF
+
+    ; Para testear sat:
+    ; Puedo pisar XMM0 antes de un llamado a SAT para testear la funcion que
+    ; ande como espero.
+    TEST_PD_SAT: dd 0xFFFFFFFF, 0x0FFFFFFF, 0xFF, 0x4F
+    ; out esperado  [        0,         FF,   FF. 0x4F]
 
 section .bss
 
@@ -99,8 +105,7 @@ tono: ; {{{
 
 ; PACKED_DWORD SAT(PACKED_DWORD A)
 ;
-; Devuelve un vector de 4 dwords cuyo byte menos significatvo representa el
-; componente original acotado en [0, 255].
+; Devuelve un vector de 4 dwords cuyo valor esta acotado entre [0, 255].
 sat: ; {{{
     push rbp
     mov rbp, rsp
@@ -108,21 +113,19 @@ sat: ; {{{
     ; Acota inferiormente por 0.
     ; Via anular los elementos negativos.
     movdqu xmm1, xmm0                   ; xmm1 = [a3 a2 a1 a0]
-    movdqu xmm2, [PD_ZEROS]             ; xmm2 = [ 0  0  0  0]
+    pxor xmm2, xmm2                     ; xmm2 = [ 0  0  0  0]
     pcmpgtd xmm1, xmm2                  ; xmm1 = [a3>0 a2>0 a1>0 a0>0]
     pand xmm0, xmm1                     ; Anula elemento si es negativo
 
-    ; Acota superiormente por 255 (0xFF)
-    ; Sobreescribe todo el componente con 0xFFFFFFFF. Pero solo nos importa el
-    ; bit menos significativo.
+    ; Acota superiormente el byte inferior por 255 (0xFF)
     movdqu xmm1, xmm0                   ; xmm1 = [a3 a2 a1 a0]
     movdqu xmm2, [PD_BYTE_MAX]          ; xmm2 = [0xFF, 0xFF, 0xFF, 0xFF]
     pcmpgtd xmm1, xmm2                  ; xmm1 = [a3>0xFF, ..., a0>0xFF]
     por xmm0, xmm1                      ; Sobreescribe con 0xFFFFFFFF los elementos mayores.
 
     ; Limpia parte superior para que el numero sea correcto en uint8_t
-    psrld xmm0, 24                      ; [ ... | b0 0 0 0 | ...]
-    pslld xmm0, 24                      ; [ ... | 0 0 0 b0 | ...]
+    pslld xmm0, 24                      ; [ ... | b0 0 0 0 | ...]
+    psrld xmm0, 24                      ; [ ... | 0 0 0 b0 | ...]
 
     pop rbp
     ret ; }}}
@@ -378,14 +381,14 @@ Manchas_asm: ; {{{
 
     ; Extrae componente Azul
     movdqa xmm0, [PB_PIXELS]                  ; [...  | A R G B | ... ]
-    pslld xmm0, 16                            ; [...  | B 0 0 0 | ... ]
+    pslld xmm0, 24                            ; [...  | B 0 0 0 | ... ]
     psrld xmm0, 24                            ; [ ... | 0 0 0 B | ... ]
     paddd xmm0, [PD_TONO]                     ; [ ... | G + tono | ... ] suma el tono
     call sat                                  ; [ ... | sat(G + tono) | ... ] Satura el resultado
     movdqa [PD_COMP_B], xmm0                  ; preserva azul
 
     ; combina
-    movdqa xmm1, [PD_COMP_R]                  ; [ ... | 0 0 0 R | ... ] 
+    movdqa xmm1, [PD_COMP_R]                  ; [ ... | 0 0 0 R | ... ]
     pslld xmm1, 24                            ; [ ... | R 0 0 0 | ... ]
     psrld xmm1, 8                             ; [ ... | 0 R 0 0 | ... ]
     por xmm0, xmm1                            ; [ ... | 0 R 0 B | ... ]
