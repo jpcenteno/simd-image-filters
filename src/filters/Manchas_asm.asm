@@ -10,7 +10,7 @@ section .rodata
     SS_2PI: dd 6.28318
 
     ; Constantes para calcular `tono`
-    PS_50: times 4 dd -50.0
+    PS_50: times 4 dd 50.0
     PS_25: times 4 dd 25.0
 
     ; FIXME por que necesito usar unaligned si puse align 16 mas arriba?
@@ -33,6 +33,7 @@ section .bss
     PTR_PF_SENII: resb 8 ; Puntero al array senii[]
     PTR_PF_COSJJ: resb 8 ; Puntero al array cosjj[]
 
+
     ALIGN 16
 
     ; Lugar en memoria estatica para preservar registros xmm. Uso esto en vez
@@ -42,6 +43,8 @@ section .bss
     PD_COMP_G: resb 16
     PD_COMP_B: resb 16
     PD_TONO: resb 16
+
+    DW_HEIGHT: resb 4
 
 
 section .text
@@ -338,12 +341,14 @@ Manchas_asm: ; {{{
 
     ; Hasta aca debugueado
 
-    ; while (0 < i)
+    mov [DW_HEIGHT], r15d
+
+    xor r15, r15
+
+    ; while (i < height)
     jmp .vertloop_cmp
 
 .vertloop:
-
-    dec r15                                   ; r15 = height - 1
 
 .vertloop_body: ; {{{
 
@@ -420,9 +425,11 @@ Manchas_asm: ; {{{
 
 ; .vertloop_body: ; }}}
 
+    inc r15
+
 .vertloop_cmp:                                ; while (0 < i)
-    cmp r15, 0
-    jnz .vertloop
+    cmp r15d, [DW_HEIGHT]
+    jne .vertloop
 
     ; FIXME ahora tiene que liberar memoria de los 2 arrays cos(jj), sen(ii)
 
