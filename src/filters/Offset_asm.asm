@@ -84,6 +84,7 @@ Offset_asm:
     paddq xmm0, xmm1
     paddq xmm0, xmm2
     paddq xmm0, xmm3
+    paddq xmm0, xmm10
 
     movdqu [r8 + r11], xmm0
     add r11, 16
