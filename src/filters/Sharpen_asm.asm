@@ -57,10 +57,12 @@ Sharpen_asm:
 
     pxor xmm11, xmm11
     psubw xmm11, xmm3
-    psrldq xmm3, 8
-    psubw xmm11, xmm3
-    psrldq xmm4, 8
+
     psubw xmm11, xmm4
+    pslldq xmm3, 8
+    psrldq xmm4, 8
+    por xmm3, xmm4
+    psubw xmm11, xmm3             ; 127b| -P3 -P2 -P1 | -P2 -P1 -P0 |0b
 
     ; minus current row + 2
     movdqu xmm3, xmm2             ; xmm3 <-- xmm2 high
@@ -69,10 +71,12 @@ Sharpen_asm:
     punpcklbw xmm4, xmm10
 
     psubw xmm11, xmm3
-    psrldq xmm3, 8
-    psubw xmm11, xmm3
-    psrldq xmm4, 8
+    
     psubw xmm11, xmm4
+    pslldq xmm3, 8
+    psrldq xmm4, 8
+    por xmm3, xmm4
+    psubw xmm11, xmm3             ; 127b| -P3 -P2 -P1 | -P2 -P1 -P0 |0b
 
     ; current row + 1 (minus j+0 and j+2, add 9 times j+1)
     movdqu xmm3, xmm1             ; xmm3 <-- xmm1 high
@@ -80,30 +84,29 @@ Sharpen_asm:
     movdqu xmm4, xmm1             ; xmm4 <-- xmm1 low
     punpcklbw xmm4, xmm10
 
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    paddw xmm11, xmm3
-    psrldq xmm3, 8
+    movdqu xmm5, xmm3
+    movdqu xmm6, xmm4
+    pslldq xmm5, 8
+    psrldq xmm6, 8
+    por xmm5, xmm6
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
+    paddw xmm11, xmm5
     psubw xmm11, xmm3
-    psrldq xmm4, 8
     psubw xmm11, xmm4
 
     ; pack data from low xmm11
     packuswb xmm11, xmm11
-    movd r13d, xmm11
+    movq r13, xmm11
 
-    ; algo
-    ; mov dword [rsi + r11 * 4], 0xFF_FF_00_00
     inc r11
-    inc r11
-    mov dword [rsi + r11 * 4], r13d
-    dec r11
+    mov qword [rsi + r11 * 4], r13
     jmp .cols
 
   .nextRow:
