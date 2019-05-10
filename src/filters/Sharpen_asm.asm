@@ -1,6 +1,7 @@
 section .data
 alphaMask:  times 4 dd 0xff_00_00_00
 
+section .text
 global Sharpen_asm
 Sharpen_asm:
   ; rdi <-- uint8_t *src
@@ -23,11 +24,12 @@ Sharpen_asm:
   xor r10, r10
 
   sub ecx, 2
-  ; sub edx, 1
+  sub edx, 3
 
   mov rax, rdi
 
   add rsi, r8
+  add rsi, 4
 
 .rows:
   cmp r10d, ecx
@@ -35,11 +37,11 @@ Sharpen_asm:
   xor r11, r11
   .cols:
     cmp r11d, edx
-    je .nextRow
+    jge .nextRow
 
     ; tengo en registros las filas que necesito
     shl r11, 2
-    movdqu xmm0, [rax + r11]
+    movdqu xmm0, [rax + r11]      ; | p3 | p2 | p1 | p0 |
     add r11, r8
     movdqu xmm1, [rax + r11]
     add r11, r8
@@ -51,18 +53,19 @@ Sharpen_asm:
     ; minus current row
     pxor xmm10, xmm10
     movdqu xmm3, xmm0             ; xmm3 <-- xmm0 high
-    punpckhbw xmm3, xmm10
+    punpckhbw xmm3, xmm10         ; | p3 | p2 |
     movdqu xmm4, xmm0             ; xmm4 <-- xmm0 low
-    punpcklbw xmm4, xmm10
+    punpcklbw xmm4, xmm10         ; | p1 | p0 |
 
     pxor xmm11, xmm11
-    psubw xmm11, xmm3
+    psubw xmm11, xmm3             ; | -p3 | -p2 |
 
-    psubw xmm11, xmm4
-    pslldq xmm3, 8
-    psrldq xmm4, 8
-    por xmm3, xmm4
-    psubw xmm11, xmm3             ; 127b| -P3 -P2 -P1 | -P2 -P1 -P0 |0b
+    psubw xmm11, xmm4             ; | -p3 -p1 | -p2 -p0 |
+    pslldq xmm3, 8                ; | p2  |     |
+    psrldq xmm4, 8                ; |     | p1  |
+    por xmm3, xmm4                ; | p2  | p1  |
+
+    psubw xmm11, xmm3             ; | -P3 -P2 -P1 | -P2 -P1 -P0 |
 
     ; minus current row + 2
     movdqu xmm3, xmm2             ; xmm3 <-- xmm2 high
@@ -105,8 +108,9 @@ Sharpen_asm:
     packuswb xmm11, xmm11
     movq r13, xmm11
 
-    inc r11
     mov qword [rsi + r11 * 4], r13
+    add r11, 2
+
     jmp .cols
 
   .nextRow:
