@@ -1,16 +1,9 @@
-Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.1024x600.bmp;32;1000;4475365019;4475365.000;O0;
 Manchas;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.1024x600.bmp;32;1000;88748722788;88748720.000;O0;
-Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.128x75.bmp;32;1000;93640629;93640.633;O0;
 Manchas;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.128x75.bmp;32;1000;1335871068;1335871.125;O0;
-Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.2048x1200.bmp;32;1000;18459315205;18459316.000;O0;
 Manchas;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.2048x1200.bmp;32;1000;323485187953;323485184.000;O0;
-Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.256x150.bmp;32;1000;323799753;323799.750;O0;
 Manchas;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.256x150.bmp;32;1000;5319692872;5319693.000;O0;
-Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.32x18.bmp;32;1000;10671183;10671.183;O0;
 Manchas;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.32x18.bmp;32;1000;79495901;79495.906;O0;
-Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.512x300.bmp;32;1000;1119415991;1119415.875;O0;
 Manchas;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.512x300.bmp;32;1000;21507144745;21507146.000;O0;
-Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.64x37.bmp;32;1000;32221235;32221.236;O0;
 Manchas;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.64x37.bmp;32;1000;342924599;342924.594;O0;
 Cuadrados;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.1024x600.bmp;32;1000;3151426188;3151426.250;O0;
 Cuadrados;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.1024x600.bmp;32;1000;153330680277;153330672.000;O0;
@@ -54,3 +47,10 @@ Sharpen;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.512x300.bmp;32;10
 Sharpen;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.512x300.bmp;32;1000;27717163787;27717164.000;O0;
 Sharpen;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.64x37.bmp;32;1000;15189631;15189.631;O0;
 Sharpen;0;src/tests/data/imagenes_a_testear/NoCountryForOldMen.64x37.bmp;32;1000;409763222;409763.219;O0;
+Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.1024x600.bmp;32;1000;4963434468;4963434.500;O3;
+Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.128x75.bmp;32;1000;102867879;102867.883;O3;
+Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.2048x1200.bmp;32;1000;18705498070;18705498.000;O3;
+Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.256x150.bmp;32;1000;554392278;554392.250;O3;
+Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.32x18.bmp;32;1000;14329324;14329.324;O3;
+Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.512x300.bmp;32;1000;1516711992;1516711.875;O3;
+Manchas;1;src/tests/data/imagenes_a_testear/NoCountryForOldMen.64x37.bmp;32;1000;35876847;35876.848;O3;
