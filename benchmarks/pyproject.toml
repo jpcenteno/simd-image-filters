@@ -8,6 +8,7 @@ authors = ["Joaquín P. Centeno <jpcenteno@users.noreply.github.com>"]
 python = "^3.7"
 matplotlib = "^3.0"
 pandas = "^0.24.2"
+ipython = "^7.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"

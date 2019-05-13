@@ -8,4 +8,4 @@ curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.p
 python get-poetry.py
 ```
 
-
+Para correr `ipython`, se hace con `poetry run ipython`.
