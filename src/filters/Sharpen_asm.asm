@@ -46,8 +46,8 @@ Sharpen_asm:
     movdqu xmm1, [rax + r11]
     add r11, r8
     movdqu xmm2, [rax + r11]
-    sub r11, r8 
-    sub r11, r8 
+    sub r11, r8
+    sub r11, r8
     shr r11, 2
 
     ; minus current row
@@ -74,7 +74,7 @@ Sharpen_asm:
     punpcklbw xmm4, xmm10
 
     psubw xmm11, xmm3
-    
+
     psubw xmm11, xmm4
     pslldq xmm3, 8
     psrldq xmm4, 8
