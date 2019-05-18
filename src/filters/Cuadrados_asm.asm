@@ -26,6 +26,8 @@ global Cuadrados_asm
 %define rotated_vector_maximum xmm6
 %define mask xmm8
 Cuadrados_asm:
+
+;Making a stack frame.
 push rbp
 mov rbp, rsp
 push rbx
@@ -34,24 +36,30 @@ push r13
 push r14
 push r15
 sub rsp, 8
+
+;Saving input data to registers.
 mov rbx, src
 mov r12, dst
 mov r13, width
 mov r14, height
 mov r15, src_row_size
-;preparing the call to CompletarConCeros.
+
+;Preparing the call to CompletarConCeros.
 mov rdi, rsi
 mov rsi, rdx
 mov rdx, rcx
 mov rcx, r8
 call CompletarConCeros
-;restoring variables.
+
+;Restoring variables.
 mov src, rbx
 mov dst, r12
 mov width, r13
 mov height, r14
 mov src_row_size, r15
 mov r9, r15
+
+;Cleaning registers from garbage on the upper bits.
 shl width, 32
 shr width, 32
 shl height, 32
@@ -60,51 +68,85 @@ shl src_row_size, 32
 shr src_row_size, 32
 shl fourth_row_offset, 32
 shr fourth_row_offset, 32
+
+;Moving src and dst pointers to the 4th row and column (starting from zero).
 lea src, [src+src_row_size*4 +16]
 lea dst, [dst+src_row_size*4 +16]
+
+;Retrieve the mask from memory and store it in a register.
 movdqu mask, [rotarizquierdacuatrobytes]
+
+;Reset column and row index and start them at four.
 xor column, column
 xor row, row
 add column, 4
 add row, 4
+
+;The right and lower limits are smaller because of the black border.
 sub width, 4
 sub height, 4
-;writing r8*3 in r9
+
+;Writing r8*3 in r9 (which is the offset to the 4th row).
 add fourth_row_offset, fourth_row_offset
 add fourth_row_offset, src_row_size
-;from top to bottom
+
+;Moving the row index from top to bottom.
 .cicloRows:
 cmp row, height
 je .finCicloRows
-;from left to right
+
+;Moving the column index from left to right.
 .cicloColumns:
 cmp column, width
 je .finCicloColumns
+
+;Loading 4x4 matrix on XMM registers.
 movdqu first_row, [src]
 movdqu second_row, [src+src_row_size]
 movdqu third_row, [src+src_row_size*2]
 movdqu fourth_row, [src+fourth_row_offset]
+
+;Find maximums and store in the vector_maximum register.
 jmp .hallarMaximos
+
 .retornarDeMaximos:
+;Save maximums on the destination image.
 movss [dst], vector_maximum
+
+;Next iteration of the cycle: Move one byte to the right.
 lea src, [src+4]
 lea dst, [dst+4]
+;Move to the next column.
 inc column
 jmp .cicloColumns
+
+;Jump here when it reaches black border.
 .finCicloColumns:
 inc row
 xor column, column
 add column, 4
-lea src, [src+32]
-lea dst, [dst+32]
+
+;Move the src and dst pointer the next non border pixel.
+                        ; |     |     |     |     |        +0    +4    +8   +12
+lea src, [src+32]       ; |0x00h|0x00h|0x00h|0x00h|--------|0x00h|0x00h|0x00h|0x00h|
+lea dst, [dst+32]       ; +16   +20   +24   +28   +32
+                        ; |0x00h|0x00h|0x00h|0x00h|--------|0x00h|0x00h|0x00h|0x00h|
 jmp .cicloRows
+
+;Algorithm for finding maximums:
 .hallarMaximos:
 pxor vector_maximum, vector_maximum
+
+;Find maximum comparing row by row on each column.
 pmaxub vector_maximum, first_row
 pmaxub vector_maximum, second_row
 pmaxub vector_maximum, third_row
 pmaxub vector_maximum, fourth_row
+
 movdqu rotated_vector_maximum, vector_maximum
+
+;Rotate vector one pixel to the right and compare.
+;Repeat four times to find the maximum among all pixels in the vector.
 pshufb rotated_vector_maximum, mask
 pmaxub vector_maximum, rotated_vector_maximum
 pshufb rotated_vector_maximum, mask
@@ -112,6 +154,8 @@ pmaxub vector_maximum, rotated_vector_maximum
 pshufb rotated_vector_maximum, mask
 pmaxub vector_maximum, rotated_vector_maximum
 jmp .retornarDeMaximos
+
+;Disarm stack frame.
 .finCicloRows:
 add rsp, 8
 pop r15
@@ -122,15 +166,17 @@ pop rbx
 pop rbp
 ret
 
+;Expected input:
 ;rdi <-- dst
 ;rsi <-- width
 ;rdx <-- height
 ;rcx <-- src_row_size
 ;--------------------
-;r12 guardo dst
-;r13 guardo width
-;r14 guardo height
-;r15 guardo src_row_size
+;Registers I will use to store data:
+;r12 <-- dst
+;r13 <-- width
+;r14 <-- height
+;r15 <-- src_row_size
 CompletarConCeros:
 push rbp
 mov rbp, rsp
