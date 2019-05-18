@@ -16,3 +16,6 @@ pytest = "^3.0"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.poetry.scripts]
+plot_base = "benchmarks.plot_impl_base:__main"
