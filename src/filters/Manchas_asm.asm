@@ -5,9 +5,10 @@ extern malloc
 
 section .rodata
 
-    ALIGN 16
 
     SS_2PI: dd 6.28318
+
+    ALIGN 16
 
     ; Constantes para calcular `tono`
     PS_50: times 4 dd 50.0
@@ -72,6 +73,7 @@ extract: ;{{{
 ; xmm0              rdi         rsi
 ;
 ; Calcula el vector con los valores de tono.
+; Devuelve en xmm0 (parte baja) y xmm1 (parte alta)
 tono: ; {{{
     push rbp
     mov rbp, rsp
@@ -99,8 +101,19 @@ tono: ; {{{
     movups xmm1, [PS_25]                      ; xmm1 = [25, 25, 25, 25]
     subps xmm0, xmm1                          ; xmm0 = senii * cosjj * 50.0 - 25.0
 
-    ; Convierto el vector tono a integers usando truncamiento.
+    ; Convierto el vector tono a integers (dword) usando truncamiento.
     cvttps2dq xmm0, xmm0                      ; Convierte a 4xInt32
+
+    ; Convierto los datos de dword (32bits) a word (16bits). Es el tipo de
+    ; datos que vamos a usar para poder operar de a 2px en paralelo.
+    packsswb xmm0, xmm0                       ; [T3,T2,T1,T0,T3,T2,T1,T0]
+    ; Desempaqueto parte alta en xmm1
+    movdqa xmm1, xmm0
+    pshufhw xmm1, xmm1, 0b11111111            ; [t3,t3,t3,t3,??,??,??,??]
+    pshuflw xmm1, xmm1, 0b10101010            ; [t3,t3,t3,t3,t2,t2,t2,t2]
+    ; Desempaqueto parte baja en xmm0
+    pshufhw xmm0, xmm0, 0b01010101            ; [t1,t1,t1,t1,T3,T2,T1,T0]
+    pshuflw xmm0, xmm0, 0b00000000            ; [t1,t1,t1,t1,t0,t0,t0,t0]
 
     pop rbp
     ret ; }}}
@@ -363,6 +376,8 @@ Manchas_asm: ; {{{
     mov rdi, r15                              ; (1er arg) = i
     mov rsi, rbx                              ; (2do arg) = j
     call tono
+    ; xmm0 = [t1,t1,t1,t1,t0,t0,t0,t0]
+    ; xmm1 = [t3,t3,t3,t3,t2,t2,t2,t2]
     movdqa [PD_TONO], xmm0                    ; preserva el vec tono
 
     ; lee 4px (16B) del src
