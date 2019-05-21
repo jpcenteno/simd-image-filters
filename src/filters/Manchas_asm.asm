@@ -26,6 +26,8 @@ section .rodata
     TEST_PD_SAT: dd 0xFFFFFFFF, 0x0FFFFFFF, 0xFF, 0x4F
     ; out esperado  [        0,         FF,   FF. 0x4F]
 
+    PB_ALPHA_MASK: times 4 db 0x00, 0x00, 0x00, 0xff
+
 section .bss
 
 
@@ -378,52 +380,36 @@ Manchas_asm: ; {{{
     call tono
     ; xmm0 = [t1,t1,t1,t1,t0,t0,t0,t0]
     ; xmm1 = [t3,t3,t3,t3,t2,t2,t2,t2]
-    movdqa [PD_TONO], xmm0                    ; preserva el vec tono
 
     ; lee 4px (16B) del src
-    movdqu xmm0, [r12]                        ; Lee 4px del src
-    movdqa [PB_PIXELS], xmm0                  ; Preserva en mem estatica (para leer aligned la proxima)
+    movdqu xmm2, [r12]                        ; [a3,r3,g3,b3,a2,r2,g2,b2,a1,r1,g1,b1,a0,r0,g0,b0]
 
-    ; Extrae comp rojo
-    pslld xmm0, 8                             ; [...  | R G B 0 | ... ]
-    psrld xmm0, 24                            ; [ ... | 0 0 0 R | ... ]
-    paddd xmm0, [PD_TONO]                     ; [ ... | R + tono | ... ] suma el tono
-    call sat                                  ; [ ... | sat(R + tono) | ... ] Satura el resultado
-    movdqa [PD_COMP_R], xmm0                  ; Preserva componente rojo
+    ; Unpack de los pixeles en 2 registros MMX packed word.
+    pxor xmm4, xmm4                           ; [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    movdqa xmm3, xmm2                         ; [a3,r3,g3,b3,a2,r2,g2,b2,a1,r1,g1,b1,a0,r0,g0,b0]
+    punpcklbw xmm2, xmm4                      ; Low:  [ 0,a1, 0,r1, 0,g1, 0,b1, 0,a0, 0,r0, 0,g0, 0,b0]
+    punpckhbw xmm3, xmm4                      ; High: [ 0,a3, 0,r3, 0,g3, 0,b3, 0,a2, 0,r2, 0,g2, 0,b2]
 
-    ; Extrae componente verde
-    movdqa xmm0, [PB_PIXELS]                  ; [...  | A R G B | ... ]
-    pslld xmm0, 16                            ; [...  | G B 0 0 | ... ]
-    psrld xmm0, 24                            ; [ ... | 0 0 0 G | ... ]
-    paddd xmm0, [PD_TONO]                     ; [ ... | G + tono | ... ] suma el tono
-    call sat                                  ; [ ... | sat(G + tono) | ... ] Satura el resultado
-    movdqa [PD_COMP_G], xmm0                  ; preserva verde
+    ; Hago la adicion de tono a los dos vectores.
+    paddsw xmm2, xmm0                          ; [a1+t1,r1+t1,g1+t1,b1+t1,a0+t0,r0+t0,g0+t0,b0+t0]
+    paddsw xmm3, xmm1                          ; [a3+t3,r3+t3,g3+t3,b3+t3,a2+t2,r2+t2,g2+t2,b2+t2]
 
-    ; Extrae componente Azul
-    movdqa xmm0, [PB_PIXELS]                  ; [...  | A R G B | ... ]
-    pslld xmm0, 24                            ; [...  | B 0 0 0 | ... ]
-    psrld xmm0, 24                            ; [ ... | 0 0 0 B | ... ]
-    paddd xmm0, [PD_TONO]                     ; [ ... | G + tono | ... ] suma el tono
-    call sat                                  ; [ ... | sat(G + tono) | ... ] Satura el resultado
-    movdqa [PD_COMP_B], xmm0                  ; preserva azul
+    ; Puede ser negativo. Acoto por 0 para pasar a unsigned.
+    movdqa xmm0, xmm2                         ; Copio px+tono (low) porque la prox instr sobreescribe
+    pcmpgtw xmm0, xmm4                        ; [(a1+t1)>0,(r1+t1)>0,(g1+t1)>0,(b1+t1)>0,(a0+t0)>0,(r0+t0)>0,(g0+t0)>0,(b0+t0)>0]
+    pand xmm2, xmm0                           ; Pongo en 0 todos los componentes <= 0
+    movdqa xmm0, xmm3                         ; Copio px+tono (high) porque la prox instr sobreescribe
+    pcmpgtw xmm0, xmm4                        ; [(a3+t3)>0,(r3+t3)>0,(g3+t3)>0,(b3+t3)>0,(a2+t2)>0,(r2+t2)>0,(g2+t2)>0,(b2+t2)>0]
+    pand xmm3, xmm0                           ; Pongo en 0 todos los componentes <= 0
 
-    ; combina
-    movdqa xmm1, [PD_COMP_R]                  ; [ ... | 0 0 0 R | ... ]
-    pslld xmm1, 24                            ; [ ... | R 0 0 0 | ... ]
-    psrld xmm1, 8                             ; [ ... | 0 R 0 0 | ... ]
-    por xmm0, xmm1                            ; [ ... | 0 R 0 B | ... ]
+    ; pack a bytes
+    packuswb xmm2, xmm3                       ; [a3+t3,r3+t3,g3+t3,b3+t3,a2+t2,r2+t2,g2+t2,b2+t2,a1+t1,r1+t1,g1+t1,b1+t1,a0+t0,r0+t0,g0+t0,b0+t0]
 
-    movdqa xmm1, [PD_COMP_G]                  ; [ ... | 0 0 0 G | ... ] 
-    pslld xmm1, 24                            ; [ ... | G 0 0 0 | ... ]
-    psrld xmm1, 16                            ; [ ... | 0 0 G 0 | ... ]
-    por xmm0, xmm1                            ; [ ... | 0 R G B | ... ]
-
-    ; Escribe el componente alpha
-    movdqu xmm1, [PD_COMP_ALPHA]              ; [ ... | FF 0 0 0 | ... ]
-    por xmm0, xmm1                            ; [ ... | FF R G B | ... ]
+    ; Corrijo alpha
+    por xmm2, [PB_ALPHA_MASK]                 ; [0xFF,r3+t3,g3+t3,b3+t3,0xFF,r2+t2,g2+t2,b2+t2,0xFF,r1+t1,g1+t1,b1+t1,0xFF,r0+t0,g0+t0,b0+t0]
 
     ; Escribe vec salida
-    movdqu [r13], xmm0
+    movdqu [r13], xmm2
 
     ; Avanzo punteros
     add r12, 16                               ; src += 16 Bytes
