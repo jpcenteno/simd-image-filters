@@ -147,11 +147,11 @@ movdqu rotated_vector_maximum, vector_maximum
 
 ;Rotate vector one pixel to the right and compare.
 ;Repeat four times to find the maximum among all pixels in the vector.
-psrldq rotated_vector_maximum, 4
+pshufb rotated_vector_maximum, mask
 pmaxub vector_maximum, rotated_vector_maximum
-psrldq rotated_vector_maximum, 4
+pshufb rotated_vector_maximum, mask
 pmaxub vector_maximum, rotated_vector_maximum
-psrldq rotated_vector_maximum, 4
+pshufb rotated_vector_maximum, mask
 pmaxub vector_maximum, rotated_vector_maximum
 jmp .retornarDeMaximos
 
