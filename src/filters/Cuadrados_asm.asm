@@ -178,65 +178,68 @@ ret
 ;r14 <-- height
 ;r15 <-- src_row_size
 CompletarConCeros:
-push rbp
-mov rbp, rsp
-push r12
-push r13
-push r14
-push r15
-xor r12, r12
-xor r13, r13
-xor r14, r14
-xor r15, r15
-mov r12, rdi
-mov r13d, esi
-mov r14d, edx
-mov r15d, ecx
-movdqu xmm2, [cero]
-shr r13, 1
-; r8 <--- column index
-; r9 <--- row index
-xor r8, r8
+	push rbp
+	mov rbp, rsp
+	push r12
+	push r13
+	push r14
+	push r15
+	xor r10, r10
+	xor r11, r11
+	xor r12, r12
+	xor r13, r13
+	xor r14, r14
+	xor r15, r15
+	mov r12, rdi
+	mov r13d, esi
+	mov r14d, edx
+	mov r15d, ecx
+	movdqu xmm2, [cero]
+	shr r13, 1
+	; r8 <--- column index
+	; r9 <--- row index
+	xor r8, r8
+
 .comienzo:
-xor r9, r9
+	xor r9, r9
 .cicloLargoVertical:
-cmp r9, 4
-je .finCicloLargo
+	cmp r9, 4
+	je .finCicloLargo
 .cicloLargoHorizontal:
-cmp r8d, r13d
-je .finCicloLargoHorizontal
-movdqu [r12+r8*8], xmm2
-inc r8
-inc r8
-jmp .cicloLargoHorizontal
+	cmp r8d, r13d
+	je .finCicloLargoHorizontal
+	movdqu [r12+r8*8], xmm2
+	inc r8
+	inc r8
+	jmp .cicloLargoHorizontal
 .finCicloLargoHorizontal:
-xor r8, r8
-inc r9
-add r12, r15
-jmp .cicloLargoVertical
+	xor r8, r8
+	inc r9
+	add r12, r15
+	jmp .cicloLargoVertical
 .finCicloLargo:
-cmp r11,1
-je .fin
-mov r10d, r14d
-sub r10d, 4
+	cmp r11,1
+	je .fin
+	mov r10d, r14d
+	sub r10d, 4
 .cicloIntermedio:
-cmp r9d, r10d
-je .finCicloIntermedio
-movdqu [r12], xmm2
-mov r8, r15
-sub r8, 16
-movdqu [r12+r8], xmm2
-xor r8, r8
-inc r9
-add r12, r15
-jmp .cicloIntermedio
+	cmp r9d, r10d
+	je .finCicloIntermedio
+	movdqu [r12], xmm2
+	mov r8, r15
+	sub r8, 16
+	movdqu [r12+r8], xmm2
+	xor r8, r8
+	inc r9
+	add r12, r15
+	jmp .cicloIntermedio
 .finCicloIntermedio:
-mov r11, 1
-jmp .comienzo
+	mov r11, 1
+	jmp .comienzo
 .fin:
-pop r15
-pop r14
-pop r13
-pop r12
-pop rbp
-ret
+	pop r15
+	pop r14
+	pop r13
+	pop r12
+	pop rbp
+	ret
