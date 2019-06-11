@@ -14,7 +14,6 @@ section .rodata
     PS_50: times 4 dd 50.0
     PS_25: times 4 dd 25.0
 
-    ; FIXME por que necesito usar unaligned si puse align 16 mas arriba?
     PD_COMP_ALPHA: times 4 dd 0xFF000000
 
     PD_ZEROS:    times 4 dd 0x00
@@ -431,8 +430,6 @@ Manchas_asm: ; {{{
 .vertloop_cmp:                                ; while (0 < i)
     cmp r15d, [DW_HEIGHT]
     jne .vertloop
-
-    ; FIXME ahora tiene que liberar memoria de los 2 arrays cos(jj), sen(ii)
 
     add rsp, 8
     pop rbp
